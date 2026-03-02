@@ -1,5 +1,3 @@
-name: Build, Push and Deploy
-
 on:
   workflow_dispatch:
   push:
@@ -8,18 +6,19 @@ jobs:
   build:
     uses: samalaajaykiran/reusable-workflow-templates-repo/.github/workflows/docker-build.yml@main
     with:
-      dockerfile: 'Dockerfile'
-      image-name: 'pythonchatapp'
-      tag: 'v1'
-      context: '.'
+      dockerfile: Dockerfile
+      image-name: pythonchatapp
+      tag: v1
+      context: .
 
   push:
     needs: build
     uses: samalaajaykiran/reusable-workflow-templates-repo/.github/workflows/docker-push.yml@main
     with:
-      image-name: 'pythonchatapp'
-      tag: 'v1'
-      acr-login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+      image-name: pythonchatapp
+      tag: v1
+      acr-login-server: ${{ vars.ACR_LOGIN_SERVER }}   # or hardcode if not secret
+    secrets:
       ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
       ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
 
@@ -27,9 +26,10 @@ jobs:
     needs: push
     uses: samalaajaykiran/reusable-workflow-templates-repo/.github/workflows/deploy-app-service.yml@main
     with:
+      app-name: python-chat-app-service
+      ResourceGroup: ${{ vars.AZURE_RESOURCEGROUP }}   # or keep as secret if you want
+      image-name: pythonchatapp
+      acr-login-server: ${{ vars.ACR_LOGIN_SERVER }}
+      tag: v1
+    secrets:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      app-name: 'python-chat-app-service'
-      ResourceGroup: ${{ secrets.AZURE_RESOURCEGROUP }}
-      image-name: 'pythonchatapp'
-      acr-login-server: ${{ secrets.ACR_LOGIN_SERVER }}
-      tag: 'v1'
